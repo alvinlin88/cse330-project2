@@ -4,7 +4,7 @@
  * policies)
  */
 #include "sched.h"
-
+#include "linux/kernel.h"
 #include "pelt.h"
 
 int sched_rr_timeslice = RR_TIMESLICE;
@@ -1615,6 +1615,7 @@ static struct task_struct *_pick_next_task_rt(struct rq *rq)
 	struct sched_rt_entity *rt_se;
 	struct rt_rq *rt_rq  = &rq->rt;
 
+
 	do {
 		rt_se = pick_next_rt_entity(rq, rt_rq);
 		BUG_ON(!rt_se);
@@ -1628,32 +1629,40 @@ static struct task_struct *pick_next_task_rt(struct rq *rq)
 {
 	struct task_struct *p;
 
-	if (!sched_rt_runnable(rq))
+	ktime_t lastPrinted = 0;
+	ktime_t el_time = ktime_get_ns();
+	
+	
+	if (!sched_rt_runnable(rq)){
 		return NULL;
+	}
+	
+	
+	
+	if(ktime_sub(el_time, lastPrinted) > 30000000000){
+		struct sched_rt_entity *rt_se;
+		int i;
 		
-
-	printk(KERN_INFO "%S\t%s", "QUEUE #", "SCHED/PID");
-	int i = 0;
-	
-	while(test_bit(i, rq->rt.active.bitmap)){
-	
-		list_for_each_entry(rt_se, rq->rt.active.queue+i, run_list){
-			struct task_struct *task = rt_task_of(rt_se);
-			
-			if(task->policy==1){
-				printk(KERN_INFO "%d%s\t%s%d\n", i, ":", "RR pid:",  task->pid); 
-			}
-			else if(task->policy==2){
-				printk(KERN_INFO "%d%s\t%s%d\n", i, ":", "FF pid:",  task->pid);
-			}
-			else{
-				printk(KERN_INFO "Unknown Policy");
+		for(i=0; i<100; i++){
+			if(test_bit(i, rq->rt.active.bitmap)==true){
+				printk(KERN_INFO "%d%s", i, ":\t\t ");
+				list_for_each_entry(rt_se, rq->rt.active.queue+i, run_list){
+					struct task_struct *task = rt_task_of(rt_se);
+					lastPrinted = ktime_get_ns();
+					if(task->policy==1){
+						printk(KERN_CONT "%s%d\t", "RR pid: ", task->pid);
+					}
+					else if(task->policy==2){
+						printk(KERN_CONT "%s%d\t", "FF pid: ", task->pid);
+					}
+				}
+				printk(KERN_CONT "\n");
 			}
 		}
 	}
 	
 	
-	
+
 	
 	p = _pick_next_task_rt(rq);
 	set_next_task_rt(rq, p, true);
