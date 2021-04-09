@@ -1,0 +1,23 @@
+PART 1:
+
+chmod +x demo1.sh priority_sched_update.sh
+./demo1.sh 1
+sudo ./priority_sched_update.sh 1
+sudo rmmod project2.ko; sudo insmod project2.ko uid=1000; sleep 1; sudo dmesg | grep user_process_ge
+ps -u 1000 -o pid,comm,pri,class,etime | grep user_process_ge
+
+./demo1.sh 2
+sudo ./priority_sched_update.sh 2
+sudo rmmod project2.ko; sudo insmod project2.ko uid=1000; sleep 1; sudo dmesg | grep user_process_ge
+ps -u 1000 -o pid,comm,pri,class,etime | grep user_process_ge
+sudo dmesg | grep user_process_ge | wc -l
+ps -u 1000 -o pid,comm,pri,class,etime | grep user_process_ge | wc -l
+
+
+
+PART 2:
+
+chmod +x demo2.sh
+sudo ./demo2.sh 1
+sudo ./demo2.sh 2
+
